@@ -1,0 +1,463 @@
+id,question,content,source,training_data_type
+07c1145e-ae88-5518-8761-afc96a527cce-sql,Quais os aspectos mais elogiados do modelo SENNA?,"SELECT item.extracted_aspect, COUNT(*) AS count
+FROM datalake_qa.gpt.gpt LATERAL VIEW explode(absa) absa_flat AS item
+WHERE item.sentiment = 'POSITIVO'
+GROUP BY item.extracted_aspect
+ORDER BY count DESC
+LIMIT 5;",nps,sql
+0b34e7da-9213-51c8-b11c-46ed0d9c9957-sql,Os clientes que planejam comprar outro computador nos próximos meses têm pontuações NPS ou CSAT diferentes dos que não planejam?,"SELECT
+    plan_to_buy_another_computer_in_next_months,
+    try_divide((COUNT(CASE WHEN nps_category = 'PROMOTOR' THEN 1 END) * 100.0 - COUNT(CASE WHEN nps_category = 'DETRATOR' THEN 1 END) * 100.0 ), COUNT(*)) AS nps_score,
+    try_divide(COUNT(CASE WHEN csat IN (4, 5) THEN 1 END), COUNT(CASE WHEN csat != 0 THEN 1 END)) AS csat_score
+FROM
+    datalake_qa.gpt.gpt
+GROUP BY
+    plan_to_buy_another_computer_in_next_months;",nps,sql
+0f013c0d-6c50-57ed-8298-ce303a3b418d-sql,Qual o notebook da Vaio com melhor nota de csat em janeiro de 22?,"SELECT
+    computer_model,
+    try_divide(COUNT(CASE WHEN csat IN (4, 5) THEN 1 END), COUNT(*)) AS csat_score
+FROM
+    datalake_qa.gpt.gpt
+WHERE month=1 and year=2022 and brand='vaio' AND csat IS NOT NULL AND csat != 0
+GROUP BY
+    computer_model
+HAVING
+    csat_score IS NOT NULL
+ORDER BY
+    csat_score DESC
+LIMIT 1;",nps,sql
+16cdce3e-dd40-514d-8995-c16b965030b8-sql,Quais os pontos mais elogiados do modelo SENNA?,"SELECT item.extracted_aspect AS extracted_aspect, count(*) AS reviews
+FROM datalake_qa.gpt.gpt
+LATERAL VIEW explode(absa) absa_flat AS item
+WHERE computer_model = 'SENNA' AND item.sentiment = 'POSITIVO'
+AND item.extracted_aspect IS NOT NULL
+GROUP BY item.extracted_aspect
+ORDER BY reviews DESC
+LIMIT 5;",nps,sql
+16ff7238-2d0c-54e1-9cc8-1086d24a2be9-sql,Qual o nível de satisfação do consumidor no notebook C4128E-S?,"SELECT
+try_divide(COUNT(CASE WHEN csat IN (4, 5) THEN 1 END), COUNT(*)) AS csat_score
+ FROM datalake_qa.gpt.gpt
+WHERE
+    computer_model = 'C4128E-S' AND csat IS NOT NULL AND csat != 0;",nps,sql
+1a26d6dc-adfd-5dcb-845a-6fccf6e8fb27-sql,Existe alguma correlação entre a profissão do usuário e o modelo de computador escolhido?,"SELECT
+    profession,
+    computer_model,
+    COUNT(*) AS reviews
+FROM
+    datalake_qa.gpt.gpt
+WHERE profession!= 'não definido'
+GROUP BY
+    profession,
+    computer_model
+ORDER BY
+    reviews DESC;",nps,sql
+1b7526a2-f51d-559b-ac9c-a8ec93f343b8-sql,mostre 5 comentarios negativos do modelo SENNA e seu respectivo aspecto,"SELECT gpt.corrected_text, item.extracted_aspect
+FROM datalake_qa.gpt.gpt
+LATERAL VIEW explode(absa) absa_flat AS item
+WHERE computer_model = 'SENNA'
+AND item.sentiment = 'NEGATIVO'
+LIMIT 5;",nps,sql
+1bee60d0-c71a-5e23-ba24-2c664a1bb6a2-sql,Quais os 5 principais aspectos positivos dos notebooks?,"SELECT item.extracted_aspect AS extracted_aspect, count(*) AS reviews
+FROM datalake_qa.gpt.gpt
+LATERAL VIEW explode(absa) absa_flat AS item
+WHERE item.sentiment = 'POSITIVO'
+AND item.extracted_aspect IS NOT NULL
+GROUP BY item.extracted_aspect
+ORDER BY reviews DESC
+LIMIT 5;",nps,sql
+1ff2a969-1c0f-557f-a152-35a92c9d89c5-sql,Qual é o CSAT do modelo Q464C considerando a tela?,"SELECT computer_model,
+    try_divide(COUNT(CASE WHEN csat IN (4, 5) THEN 1 END), COUNT(*)) AS csat_score
+
+FROM datalake_qa.gpt.gpt
+LATERAL VIEW explode(absa) absa_flat AS item
+WHERE computer_model = 'Q464C' AND csat IS NOT NULL AND csat != 0
+AND item.extracted_aspect IN ('TELA')
+GROUP BY computer_model
+LIMIT 5;",nps,sql
+2607d26d-5963-583f-9a50-076eb03c6376-sql,Analise o notebook C464AP,"SELECT COUNT(*) as quantidade_reviews,
+try_divide(COUNT(CASE WHEN csat IN (4, 5) THEN 1 END), COUNT(CASE WHEN csat != 0 THEN 1 END)) AS csat_score,
+try_divide((COUNT(CASE WHEN nps_category = 'PROMOTOR' THEN 1 END) * 100.0 - COUNT(CASE WHEN nps_category = 'DETRATOR' THEN 1 END) * 100.0 ), COUNT(*)) AS nps_score
+FROM datalake_qa.gpt.gpt
+WHERE computer_model = 'C464AP';",nps,sql
+27b3e26c-aff2-59c5-b153-0b7681355a5f-sql,Quais são os principais comentários negativos sobre o modelo VJFE52F11X-XXXXXX nos últimos 3 anos?,"SELECT GET(filtered.segmented_text, 0) AS segmented_text, GET(filtered.sentiment, 0) AS sentiment
+FROM (
+    SELECT computer_model, year, FILTER(absa, item -> item.sentiment = 'NEGATIVO') filtered
+    FROM datalake_qa.gpt.gpt
+)
+WHERE ARRAY_SIZE(filtered) > 0 
+AND computer_model = 'VJFE52F11X-XXXXXX'
+AND year >= YEAR(CURRENT_DATE) - 3
+LIMIT 5;",nps,sql
+2f8438d1-ce35-545e-8894-79c3e2e64c4a-sql,quantos elogios sobre desempenho e design o notebook PROUST possui?,"SELECT item.extracted_aspect AS  extracted_aspect, count(*) AS reviews
+FROM datalake_qa.gpt.gpt
+LATERAL VIEW explode(absa) absa_flat AS item
+WHERE computer_model = 'PROUST'
+AND item.sentiment = 'POSITIVO'
+AND item.extracted_aspect IN ('DESEMPENHO', 'DESIGN')
+GROUP BY item.extracted_aspect
+ORDER BY reviews DESC
+LIMIT 2;",nps,sql
+30ec2381-fd22-51ec-8d1b-a26d85606cf8-sql,Qual o NPS do modelo PROUST e Q464C?,"SELECT
+    computer_model,
+    try_divide((COUNT(CASE WHEN nps_category = 'PROMOTOR' THEN 1 END) * 100.0 - COUNT(CASE WHEN nps_category = 'DETRATOR' THEN 1 END) * 100.0 ), COUNT(*)) AS nps_score
+FROM
+    datalake_qa.gpt.gpt
+WHERE
+    computer_model IN ('PROUST', 'Q464C')
+GROUP BY
+    computer_model;",nps,sql
+333a89c2-713f-5a51-9324-00a35d3e74d4-sql,"Qual o CSAT score do VJFE52F11X-XXXXXX em agosto de 2023?
+
+","SELECT
+    try_divide(COUNT(CASE WHEN csat IN (4, 5) THEN 1 END), COUNT(*)) AS csat_score
+FROM
+    datalake_qa.gpt.gpt
+WHERE
+    computer_model = 'VJFE52F11X-XXXXXX'
+    AND month = 8
+    AND year = 2023 AND csat IS NOT NULL AND csat != 0;",nps,sql
+360abb38-3c5d-54f5-a3f4-523819453ba8-sql,"Quais são as razões mais comuns para a compra de um novo computador, e como elas variam por profissão?","SELECT
+    profession,
+    reason_for_computer_purchase,
+    COUNT(*) AS count
+FROM
+    datalake_qa.gpt.gpt
+WHERE
+    profession != 'não definido'
+GROUP BY
+    profession,
+    reason_for_computer_purchase
+ORDER BY
+    count DESC;",nps,sql
+3649a07d-d60f-5c70-afca-714ff1e140cf-sql,quais os pontos negativos do notebook PROUST?,"SELECT filtered.extracted_aspect, COUNT(*) AS reviews
+FROM datalake_qa.gpt.gpt
+LATERAL VIEW explode(absa) absa_flat AS filtered
+WHERE computer_model = 'PROUST' AND filtered.sentiment = 'NEGATIVO'
+GROUP BY filtered.extracted_aspect
+ORDER BY reviews DESC
+LIMIT 100;",nps,sql
+367e832f-d31f-5a98-9bd8-2bf59d7d8236-sql,Qual equipamento teve melhor nps em fevereiro de 22?,"SELECT
+    computer_model,
+    try_divide((COUNT(CASE WHEN nps_category = 'PROMOTOR' THEN 1 END) * 100.0 - COUNT(CASE WHEN nps_category = 'DETRATOR' THEN 1 END) * 100.0 ), COUNT(*)) AS nps_score
+FROM
+    datalake_qa.gpt.gpt
+WHERE month = 2 AND year = 2022
+GROUP BY
+    computer_model
+ORDER BY
+    nps_score DESC
+LIMIT 1;
+",nps,sql
+38f88f3c-7434-5654-8a06-f8277dba58b9-sql,Me fale um pouco mais sobre os comentários positivos do modelo PROUST,"SELECT GET(filtered.segmented_text, 0) AS segmented_text, GET(filtered.sentiment, 0) AS sentiment
+FROM (SELECT computer_model, FILTER(absa, item -> item.sentiment = 'POSITIVO') filtered
+      FROM datalake_qa.gpt.gpt)
+WHERE ARRAY_SIZE(filtered) > 0 AND COMPUTER_MODEL = 'PROUST'
+LIMIT 5;",nps,sql
+3da4d0a0-d2aa-5ae7-96ac-da9bcc1d7b3f-sql,qual o pior notebook de 2022 com base em NPS e apenas modelos com mais de 50 reviews,"SELECT
+    computer_model,
+    try_divide((COUNT(CASE WHEN nps_category = 'PROMOTOR' THEN 1 END) * 100.0 - COUNT(CASE WHEN nps_category = 'DETRATOR' THEN 1 END) * 100.0 ), COUNT(*)) AS nps_score,
+    COUNT(*) AS total_reviews
+FROM
+    datalake_qa.gpt.gpt
+WHERE
+    year = 2022
+GROUP BY
+    computer_model
+HAVING
+    COUNT(*) > 50
+ORDER BY
+    nps_score ASC
+LIMIT 1;",nps,sql
+45f729d7-5480-5057-b540-b94d620f0b75-sql,me de comentarios negativos a respeito do aspecto mais negativo comentado pelos  usuarios,"WITH negative_aspects AS (
+    SELECT item.extracted_aspect, COUNT(*) AS count
+    FROM datalake_qa.gpt.gpt LATERAL VIEW explode(absa) absa_flat AS item
+    WHERE item.sentiment = 'NEGATIVO'
+    GROUP BY item.extracted_aspect
+    ORDER BY count DESC
+    LIMIT 1
+)
+SELECT gpt.corrected_text
+FROM datalake_qa.gpt.gpt
+LATERAL VIEW explode(absa) absa_flat AS item
+WHERE item.sentiment = 'NEGATIVO'
+AND item.extracted_aspect = (SELECT extracted_aspect FROM negative_aspects);",nps,sql
+483daa44-d1a2-5596-a035-a148a9de6df6-sql,Qual modelo teve mais reclamações sobre desempenho?,"SELECT computer_model, item.extracted_aspect AS extracted_aspect, count(*) AS reviews
+FROM datalake_qa.gpt.gpt
+LATERAL VIEW explode(absa) absa_flat AS item
+WHERE item.sentiment = 'NEGATIVO' AND item.extracted_aspect = 'DESEMPENHO'
+GROUP BY item.extracted_aspect, computer_model
+ORDER BY reviews DESC
+LIMIT 10;",nps,sql
+5246faa1-82b1-52f4-981b-43fb2cd611fe-sql,Mostre 5 reclamacoes do modelo proust,"SELECT DISTINCT corrected_text
+FROM datalake_qa.gpt.gpt
+LATERAL VIEW explode(absa) absa_flat AS item
+WHERE computer_model = 'PROUST' AND item.sentiment = 'NEGATIVO'
+LIMIT 5;",nps,sql
+526c223d-7aea-514d-8417-ed186aa91167-sql,O que posso melhorar no modelo SENNA?,"SELECT GET(FILTERED.SEGMENTED_TEXT, 0) AS SEGMENTED_TEXT, GET(FILTERED.SENTIMENT, 0) AS SENTIMENT FROM (SELECT COMPUTER_MODEL, FILTER(ABSA, ITEM -> ITEM.SENTIMENT = 'NEGATIVO') FILTERED FROM datalake_qa.gpt.gpt) WHERE ARRAY_SIZE(FILTERED) > 0 AND COMPUTER_MODEL = 'SENNA' LIMIT 100;",nps,sql
+557ff1aa-c8b8-56cc-9650-cbd467a9d39c-sql,Existe uma correlação entre a intenção de compra de outra marca e a satisfação ou insatisfação atual?,"SELECT
+    future_brand,
+    nps_category,
+    COUNT(*) AS count
+FROM
+    datalake_qa.gpt.gpt
+WHERE
+    future_brand IS NOT NULL
+GROUP BY
+    future_brand,
+    nps_category
+ORDER BY
+    count DESC;",nps,sql
+5a71cd74-bae5-5607-99b4-4fffa7fa1e9d-sql,Quais são os principais pontos de melhorias para o modelo PROUST?,"SELECT item.extracted_aspect AS extracted_aspect, count(*) AS reviews
+FROM datalake_qa.gpt.gpt
+LATERAL VIEW explode(absa) absa_flat AS item
+WHERE computer_model = 'PROUST' AND item.sentiment = 'NEGATIVO'
+AND item.extracted_aspect IS NOT NULL
+GROUP BY item.extracted_aspect
+ORDER BY reviews DESC
+LIMIT 5;",nps,sql
+5e962b01-611f-5332-b90b-8cd0c01b69d4-sql,Qual o NPS do modelo PROUST?,"SELECT
+    computer_model,
+    try_divide((COUNT(CASE WHEN nps_category = 'PROMOTOR' THEN 1 END) * 100.0 - COUNT(CASE WHEN nps_category = 'DETRATOR' THEN 1 END) * 100.0 ), COUNT(*)) AS nps_score
+FROM
+    datalake_qa.gpt.gpt
+WHERE
+    computer_model = 'PROUST'
+GROUP BY
+    computer_model;",nps,sql
+5fcda822-b2eb-5108-842c-74df7d422a60-sql,O que as pessoas mais reclamaram do modelo Q464C  em fev de 2022?,"SELECT item.extracted_aspect AS extracted_aspect, count(*) AS reviews
+FROM datalake_qa.gpt.gpt
+LATERAL VIEW explode(absa) absa_flat AS item
+WHERE computer_model = 'Q464C'
+AND item.sentiment = 'NEGATIVO'
+AND item.extracted_aspect IS NOT NULL
+AND month = 2
+AND year = 2022
+GROUP BY item.extracted_aspect
+ORDER BY reviews DESC
+LIMIT 5;",nps,sql
+667a7e53-32ce-568e-8be5-5adc2c14b441-sql,Quais são os aspectos negativos mencionados no modelo HEMINGWAY?,"SELECT item.extracted_aspect, COUNT(*) as total
+FROM datalake_qa.gpt.gpt
+LATERAL VIEW explode(absa) absa_flat AS item
+WHERE computer_model = 'HEMINGWAY' AND item.sentiment = 'NEGATIVO'
+GROUP BY item.extracted_aspect
+ORDER BY total DESC;",nps,sql
+6b44ee12-81a5-55ac-80fe-35114b09eec2-sql," Com base nas avaliações do produto SENNA, cite os 3 elogios mais comuns e como eu posso melhorá-lo?","SELECT item.extracted_aspect AS extracted_aspect, count(*) AS reviews
+FROM datalake_qa.gpt.gpt
+LATERAL VIEW explode(absa) absa_flat AS item
+WHERE item.sentiment = 'POSITIVO' AND computer_model = 'SENNA'
+AND item.extracted_aspect IS NOT NULL
+GROUP BY item.extracted_aspect
+ORDER BY reviews DESC
+LIMIT 3;",nps,sql
+6e1005ff-df5e-5385-976c-fa4d4a9b9886-sql,Qual é o nível de satisfação dos clientes com o notebook Q464C?,"SELECT
+    try_divide(COUNT(CASE WHEN csat IN (4, 5) THEN 1 END), COUNT(*)) AS csat_score
+FROM
+    datalake_qa.gpt.gpt
+WHERE
+    computer_model = 'Q464C'
+    AND csat IS NOT NULL AND csat != 0;",nps,sql
+76ef5974-4adb-5f3a-b9ab-726fe1d0218a-sql,qual o nps do modelo senna nos últimos 12 meses?,"SELECT
+    try_divide((COUNT(CASE WHEN nps_category = 'PROMOTOR' THEN 1 END) * 100.0 - COUNT(CASE WHEN nps_category = 'DETRATOR' THEN 1 END) * 100.0 ), COUNT(*)) AS nps_score
+FROM
+    datalake_qa.gpt.gpt
+WHERE
+    computer_model = 'SENNA' AND
+    DATE(year || '-' || month || '-' || day) >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 year');",nps,sql
+77563a26-5ab1-50ab-8455-281c3e7eb385-sql,Como podemos melhorar o modelo C4120F-S?,"SELECT GET(FILTERED.SEGMENTED_TEXT, 0) AS SEGMENTED_TEXT, GET(FILTERED.SENTIMENT, 0) AS SENTIMENT FROM (SELECT COMPUTER_MODEL, FILTER(ABSA, ITEM -> ITEM.SENTIMENT = 'NEGATIVO') FILTERED FROM datalake_qa.gpt.gpt) WHERE ARRAY_SIZE(FILTERED) > 0 AND COMPUTER_MODEL = 'C4120F-S' LIMIT 10;",nps,sql
+7f97f2f7-3a43-549e-a38d-184f16bfad74-sql,Quais as principais reclamações em agosto de 23?,"SELECT item.extracted_aspect AS extracted_aspect, count(*) AS reviews
+FROM datalake_qa.gpt.gpt
+LATERAL VIEW explode(absa) absa_flat AS item
+WHERE month = 8 AND year = 2023 AND item.sentiment = 'NEGATIVO'
+GROUP BY item.extracted_aspect
+ORDER BY reviews DESC
+LIMIT 5;",nps,sql
+8578cee4-3e11-5882-b8fb-05480d8659d2-sql,Qual é a diferença na satisfação do cliente entre aqueles que compraram o computador para estudos versus entretenimento?,"SELECT
+    reason_for_computer_purchase,
+    try_divide(COUNT(CASE WHEN csat IN (4, 5) THEN 1 END), COUNT(*)) AS csat_score
+FROM
+    datalake_qa.gpt.gpt
+WHERE
+    reason_for_computer_purchase IN ('Uso para estudo', 'Entretenimento') AND csat IS NOT NULL AND csat != 0
+GROUP BY
+    reason_for_computer_purchase;",nps,sql
+935c6de5-4f60-5960-af0f-b48ad4bed6cc-sql,qual o pior notebook do ano passado levando em consideracao o CSAT,"SELECT
+    computer_model,
+    try_divide(COUNT(CASE WHEN csat IN (4, 5) THEN 1 END), COUNT(*)) AS csat_score
+FROM datalake_qa.gpt.gpt
+WHERE
+    year = EXTRACT(YEAR FROM CURRENT_DATE) - 1  AND csat IS NOT NULL AND csat != 0
+GROUP BY
+    computer_model
+HAVING csat_score IS NOT NULL
+ORDER BY
+    csat_score ASC
+LIMIT 1;",nps,sql
+94f555cb-8765-5944-ad6b-f4f7754c9079-sql,Qual o CSAT do modelo SENNA?,"SELECT
+    try_divide(COUNT(CASE WHEN csat IN (4, 5) THEN 1 END), COUNT(*)) AS csat_score
+FROM
+    datalake_qa.gpt.gpt
+WHERE
+    computer_model = 'SENNA' AND csat IS NOT NULL AND csat != 0;",nps,sql
+97b83bff-35bd-57c9-b603-0b86b4b6948f-sql,Quais são os principais comentários negativos do modelo Q464C?,"SELECT GET(filtered.segmented_text, 0) AS segmented_text, GET(filtered.sentiment, 0) AS sentiment
+FROM (SELECT computer_model, FILTER(absa, item -> item.sentiment = 'NEGATIVO') filtered
+      FROM datalake_qa.gpt.gpt)
+WHERE ARRAY_SIZE(filtered) > 0 AND computer_model = 'Q464C'
+LIMIT 5;
+",nps,sql
+aa64d41a-bac9-533a-ba5a-ed6bc5211cca-sql,como podemos melhorar os problemas de bateria?,"SELECT GET(FILTERED.SEGMENTED_TEXT, 0) AS SEGMENTED_TEXT, GET(FILTERED.SENTIMENT, 0) AS SENTIMENT FROM (SELECT COMPUTER_MODEL, FILTER(ABSA, ITEM -> ITEM.SENTIMENT = 'NEGATIVO' AND ITEM.EXTRACTED_ASPECT = 'BATERIA') FILTERED FROM datalake_qa.gpt.gpt) WHERE ARRAY_SIZE(FILTERED) > 0 LIMIT 10;",nps,sql
+aacc401c-c4d8-52d1-9047-a01ed9e26129-sql,Existe uma tendência de compra específica para certos estados ou regiões?,"SELECT state, future_brand, COUNT(*) AS count
+FROM datalake_qa.gpt.gpt
+WHERE state != 'Não definido' AND future_brand IS NOT NULL
+GROUP BY state, future_brand
+ORDER BY count DESC;",nps,sql
+b3d1e950-ac7f-548a-8921-6d0e20b496ae-sql,Principais comentários negativos sobre o modelo VJFE52F11X-XXXXXX em 2022,"SELECT GET(filtered.segmented_text, 0) AS segmented_text, GET(filtered.sentiment, 0) AS sentiment
+FROM (SELECT computer_model, year, FILTER(absa, item -> item.sentiment = 'NEGATIVO') filtered
+      FROM datalake_qa.gpt.gpt)
+WHERE ARRAY_SIZE(filtered) > 0 AND computer_model = 'VJFE52F11X-XXXXXX' AND year = 2022
+LIMIT 5;",nps,sql
+c0e1944b-d076-5338-99ea-4b5992de4982-sql,faça uma analise do nps dos meus 10 modelos com mais reviews,"WITH model_review_counts AS (
+    SELECT
+        computer_model,
+        COUNT(*) AS review_count
+    FROM
+        datalake_qa.gpt.gpt
+    GROUP BY
+        computer_model
+)
+SELECT
+    gpt.computer_model,
+    try_divide((COUNT(CASE WHEN nps_category = 'PROMOTOR' THEN 1 END) * 100.0 - COUNT(CASE WHEN nps_category = 'DETRATOR' THEN 1 END) * 100.0 ), COUNT(*)) AS nps_score,
+    mrc.review_count
+FROM
+    datalake_qa.gpt.gpt AS gpt
+JOIN
+    model_review_counts AS mrc ON gpt.computer_model = mrc.computer_model
+WHERE
+    mrc.review_count > 0
+GROUP BY
+    gpt.computer_model, mrc.review_count
+ORDER BY
+    mrc.review_count DESC
+LIMIT 10;",nps,sql
+c102c539-543e-56ca-8068-29c7300a0efa-sql,Quais os 5 melhores notebooks da marca vaio em csat levando em consideracao apenas os modelos com mais de 30 reviews?,"SELECT
+    computer_model,
+    try_divide(COUNT(CASE WHEN csat IN (4, 5) THEN 1 END), COUNT(*)) AS csat_score,
+    COUNT(*) AS total_reviews
+FROM
+    datalake_qa.gpt.gpt
+WHERE
+    brand = 'vaio' AND csat IS NOT NULL AND csat != 0
+GROUP BY
+    computer_model
+HAVING
+    COUNT(*) > 30
+ORDER BY
+    csat_score DESC
+LIMIT 5;",nps,sql
+c5896558-1f41-5832-8ba6-89d7cb858d6b-sql,Os clientes em diferentes estados demonstram preferências distintas por marcas ou modelos de computador?,"SELECT state, brand, computer_model, COUNT(*) AS reviews FROM datalake_qa.gpt.gpt WHERE state != 'Não definido' GROUP BY state, brand, computer_model ORDER BY reviews DESC;",nps,sql
+cae33840-fa58-57a4-a023-2616afaef01c-sql,Como posso melhorar o desempenho dos meus notebooks?,"SELECT GET(FILTERED.SEGMENTED_TEXT, 0) AS SEGMENTED_TEXT, GET(FILTERED.SENTIMENT, 0) AS SENTIMENT
+FROM (SELECT COMPUTER_MODEL, FILTER(ABSA, ITEM -> ITEM.SENTIMENT = 'NEGATIVO' AND ITEM.EXTRACTED_ASPECT = 'DESEMPENHO') FILTERED FROM datalake_qa.gpt.gpt) 
+WHERE ARRAY_SIZE(FILTERED) > 0 LIMIT 5;",nps,sql
+cec39452-77df-5af0-ab8e-1f2c4f601483-sql,reclamacoes sobre tela,"SELECT item.segmented_text, COUNT(*) AS count
+FROM datalake_qa.gpt.gpt 
+LATERAL VIEW explode(absa) absa_flat AS item
+WHERE item.extracted_aspect = 'TELA' AND item.sentiment = 'NEGATIVO'
+GROUP BY item.segmented_text
+ORDER BY count DESC;",nps,sql
+cecb7a51-61e9-51cc-a365-5928064f5776-sql,Qual marca os clientes estão considerando para sua próxima compra e como isso se relaciona com a marca atual?,"SELECT brand AS current_brand, future_brand, COUNT(*) AS count FROM datalake_qa.gpt.gpt GROUP BY brand, future_brand ORDER BY count DESC;",nps,sql
+d3058bfc-3438-5ff7-bccf-c33f486509da-sql,Qual o melhor notebook?,"SELECT
+    computer_model,
+    try_divide((COUNT(CASE WHEN nps_category = 'PROMOTOR' THEN 1 END) * 100.0 - COUNT(CASE WHEN nps_category = 'DETRATOR' THEN 1 END) * 100.0 ), COUNT(*)) AS nps_score
+FROM
+    datalake_qa.gpt.gpt
+GROUP BY
+    computer_model
+ORDER BY
+    nps_score DESC
+LIMIT 1;
+",nps,sql
+d5f528e9-8ca9-547a-8494-51566caec95d-sql,quais os principais elogios do ano 23?,"SELECT item.extracted_aspect AS extracted_aspect, COUNT(*) AS reviews
+FROM datalake_qa.gpt.gpt
+LATERAL VIEW explode(absa) absa_flat AS item
+WHERE item.sentiment = 'POSITIVO' AND year = 2023
+AND item.extracted_aspect IS NOT NULL
+GROUP BY item.extracted_aspect
+ORDER BY reviews DESC
+LIMIT 5;",nps,sql
+d71d76ea-3ae6-5665-92ea-a40a46244f71-sql,Como as preferências por marca mudam com a profissão do usuário?,"SELECT profession, brand, COUNT(*) AS reviews FROM datalake_qa.gpt.gpt WHERE profession != 'não definido' GROUP BY profession, brand ORDER BY reviews DESC;",nps,sql
+dea6b973-e739-513a-86e3-f3248fcf2da6-sql,Quais marcas e modelos são mais populares entre os profissionais que compram computadores para trabalho remoto?,"SELECT brand, computer_model, COUNT(*) AS count FROM datalake_qa.gpt.gpt WHERE reason_for_computer_purchase = 'Uso para trabalho' GROUP BY brand, computer_model ORDER BY count DESC;",nps,sql
+e590356c-61b4-5f1c-978c-a33b5c9e85f1-sql,Qual o notebook teve mais problemas de bateria no mês maio de 2024?,"SELECT
+    computer_model,
+    COUNT(*) AS battery_issue_count
+FROM
+    datalake_qa.gpt.gpt
+LATERAL VIEW explode(absa) absa_flat AS aspect
+WHERE
+    aspect.extracted_aspect = 'BATERIA'
+    AND aspect.sentiment = 'NEGATIVO'
+    AND month = 5
+    AND year = 2024
+GROUP BY
+    computer_model
+ORDER BY
+    battery_issue_count DESC
+LIMIT 1;",nps,sql
+e6c6a19d-f1ed-5818-b763-7cdbc5790ecd-sql,"qual é o modelo com melhor NPS considerando o desempenho, considerando apenas modelos com mais de 50 reviews","SELECT
+    computer_model,
+    try_divide((COUNT(CASE WHEN nps_category = 'PROMOTOR' THEN 1 END) * 100.0 - COUNT(CASE WHEN nps_category = 'DETRATOR' THEN 1 END) * 100.0 ), COUNT(*)) AS nps_score,
+    COUNT(*) AS total_reviews
+FROM
+    datalake_qa.gpt.gpt
+LATERAL VIEW explode(absa) absa_flat AS item
+WHERE
+    item.extracted_aspect = 'DESEMPENHO'
+GROUP BY
+    computer_model
+HAVING
+    COUNT(*) > 50
+ORDER BY
+    nps_score DESC
+LIMIT 1;",nps,sql
+edb0ba71-8a8a-5619-933e-b09afc5b8b77-sql,"qual modelo teve o melhor NPS no ano passado?
+","SELECT
+    computer_model,
+    try_divide((COUNT(CASE WHEN nps_category = 'PROMOTOR' THEN 1 END) * 100.0 - COUNT(CASE WHEN nps_category = 'DETRATOR' THEN 1 END) * 100.0 ), COUNT(*)) AS nps_score
+FROM
+    datalake_qa.gpt.gpt
+WHERE
+    year = YEAR(CURRENT_DATE) - 1
+GROUP BY
+    computer_model
+ORDER BY
+    nps_score DESC
+LIMIT 1;",nps,sql
+f4e95ba9-b160-511c-86b2-9a99678fabde-sql,Quais os 3 maiores aspectos negativos em agosto de 23?,"SELECT item.extracted_aspect, COUNT(*) AS count
+FROM datalake_qa.gpt.gpt LATERAL VIEW explode(absa) absa_flat AS item
+WHERE item.sentiment = 'NEGATIVO' AND month = 8 AND year = 2023
+GROUP BY item.extracted_aspect
+ORDER BY count DESC
+LIMIT 3;",nps,sql
+ffb8aa6b-6509-5c08-b64c-d6b31c0cd308-sql,Qual o nível de satisfação do consumidor no notebook C4128E-S?,"SELECT
+    try_divide(COUNT(CASE WHEN csat IN (4, 5) THEN 1 END), COUNT(*)) AS csat_score
+FROM
+    datalake_qa.gpt.gpt
+WHERE
+    computer_model = 'C4128E-S' AND csat IS NOT NULL AND csat != 0;",nps,sql
+0a81aa9a-f8fb-5188-b992-56c27545e961-ddl,,"CREATE TABLE datalake_qa.gpt.gpt (
+  evaluation_id INT, 
+  computer_model STRING COMMENT 'Specific model of the computer acquired by the user. Value examples: PROUST, SENNA, Q464C', 
+  corrected_text STRING COMMENT 'Feedback text. Value examples: ele é lento para abrir as páginas e pesquisas na internet, modelo muito bom, péssima', 
+  absa ARRAY<STRUCT<segmented_text: STRING, extracted_aspect: STRING, sentiment: STRING>> COMMENT 'Aspect-based Sentiment Analysis (ABSA) results for the feedback. Each entry contains segmented text, extracted aspect, and sentiment. Value examples: [{""""""""segmented_text"""""""":""""""""muito caro"""""""",""""""""extracted_aspect"""""""":""""""""PREÇO"""""""",""""""""sentiment"""""""":""""""""NEGATIVO""""""""}], [{""""""""segmented_text"""""""":""""""""outras marcas"""""""",""""""""extracted_aspect"""""""":""""""""MARCA"""""""",""""""""sentiment"""""""":""""""""NEUTRO""""""""},{""""""""segmented_text"""""""":""""""""melhor preço"""""""",""""""""extracted_aspect"""""""":""""""""PREÇO"""""""",""""""""sentiment"""""""":""""""""POSITIVO""""""""}], [{""""""""segmented_text"""""""":""""""""trava e tenho que parar o que estou fazendo"""""""",""""""""extracted_aspect"""""""":""""""""DESEMPENHO"""""""",""""""""sentiment"""""""":""""""""NEGATIVO""""""""}], [{""""""""segmented_text"""""""":""""""""O computador tem desempenho bom"""""""",""""""""extracted_aspect"""""""":""""""""DESEMPENHO"""""""",""""""""sentiment"""""""":""""""""POSITIVO""""""""}], [{""""""""segmented_text"""""""":""""""""tela grande"""""""",""""""""extracted_aspect"""""""":""""""""TELA"""""""",""""""""sentiment"""""""":""""""""POSITIVO""""""""}]', 
+  nps_category STRING COMMENT 'User classification based on the Net Promoter Score (NPS). Possible values are: PROMOTOR, NEUTRO or DETRATOR.', 
+  reason_for_computer_purchase STRING COMMENT 'Primary motivation for the user to purchase the computer. Possible values are: Atividades domésticas, Entretenimento, Uso para estudo, Uso para trabalho, Uso para lazer, Todas as opções acima', 
+  future_brand STRING COMMENT 'Brand of the computer the user intends to purchase in the future . Value examples: Samsung, Dell, Apple', 
+  plan_to_buy_another_computer_in_next_months STRING COMMENT 'User intention to buy another computer in the near future. Possible values are: Sim, Não e Talvez.', 
+  profession STRING COMMENT 'Profession reported by the user. Value examples: estudante, educador, designer, não definido', 
+  state STRING COMMENT 'State of residence of the user. Value examples: São Paulo, Bahia, Minas Gerais, Não definido', 
+  csat INT COMMENT 'Customer Satisfaction Score given to the product by the customer, values range from 1 to 5. Value examples: 1, 5, 4', 
+  nps INT, 
+  day INT COMMENT 'Day the feedback was recorded. Value examples: 10, 12, 15', 
+  month INT COMMENT 'Month the feedback was recorded. Value examples: 5, 8, 10', 
+  year INT COMMENT 'Year the feedback was recorded. Value examples: 5, 8, 10', 
+  brand STRING COMMENT 'This field refers to the brand of the computer that the user has already acquired. That is, it is the brand of the computer that the user currently owns. Value examples: positivo, vaio'
+);",nps,ddl
